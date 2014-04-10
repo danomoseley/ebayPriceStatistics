@@ -1,6 +1,6 @@
 <!doctype html>
 <title>Ebay Price Statistics</title>
-<a href="/">NEW SEARCH</a><br><br>
+{% include 'search_header.html' %}
 {% for category in categories %}
 
   	<a href="/statistics/{{searchTerm}}/{{category['categoryId']['value']}}">{{ category['categoryName']['value'] }}</a>
