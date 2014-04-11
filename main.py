@@ -5,6 +5,7 @@ import ConfigParser
 
 config = ConfigParser.RawConfigParser()
 config.read('config.cfg')
+unwantedConditions = ['For parts or not working']
 
 app = Flask(__name__)
 #app.debug = True
@@ -23,9 +24,9 @@ def findCategory(searchTerm=None, categoryId=None):
 	if searchTerm is None:
 		searchTerm = request.form['searchTerm']
 	if categoryId is not None:
-		api.execute('findCompletedItems', {'sortOrder': 'EndTimeSoonest', 'keywords': searchTerm, 'outputSelector': 'CategoryHistogram', 'categoryId':categoryId})
+		api.execute('findCompletedItems', {'itemFilter(0).name':'Condition', 'itemFilter(0).value':'Used', 'sortOrder': 'EndTimeSoonest', 'keywords': searchTerm, 'outputSelector': 'CategoryHistogram', 'categoryId':categoryId})
 	else:
-		api.execute('findCompletedItems', {'sortOrder': 'EndTimeSoonest','keywords': searchTerm, 'outputSelector': 'CategoryHistogram'})
+		api.execute('findCompletedItems', {'itemFilter(0).name':'Condition', 'itemFilter(0).value':'Used', 'sortOrder': 'EndTimeSoonest','keywords': searchTerm, 'outputSelector': 'CategoryHistogram'})
 	response = api.response_dict()
 
 	if type(response['categoryHistogramContainer']['categoryHistogram']) is not list:
@@ -62,26 +63,51 @@ def statistics(searchTerm=None, categoryId=None):
 	currentPage = 0
 	totalPages = 1
 	while currentPage < 10 and currentPage < totalPages:
-		api.execute('findCompletedItems', {'paginationInput.pageNumber': currentPage, 'sortOrder': 'EndTimeSoonest','keywords': searchTerm, 'categoryId': str(categoryId), 'itemFilter': 'SoldItemsOnly'})
+		api.execute('findCompletedItems', {
+			'itemFilter': [
+		        {'name': 'Condition', 'value': 'Used'},
+		        #{'name': 'SoldItemsOnly', 'value': True}
+		    ],
+			'paginationInput.pageNumber': currentPage,
+			'sortOrder': 'EndTimeSoonest',
+			'keywords': searchTerm,
+			'categoryId': str(categoryId),
+		})
 		response = api.response_dict()
+
 		totalPages = int(response['paginationOutput']['totalPages']['value'])
 
+		foundConditions = {}
+
 		for item in response['searchResult']['item']:
-			if item['sellingStatus']['sellingState']['value'] == 'EndedWithoutSales':
-				unsold += 1
-			else:
-				soldPrices.append(float(item['sellingStatus']['currentPrice']['value']))
-				if sold == 0:
-					latestSoldDate = item['listingInfo']['endTime']['value']
+			itemCondition = item['condition']['conditionDisplayName']['value']
+			if itemCondition not in unwantedConditions:
+				foundConditions[itemCondition] = True
+				if item['sellingStatus']['sellingState']['value'] == 'EndedWithoutSales':
+					unsold += 1
 				else:
-					earliestSoldDate = item['listingInfo']['endTime']['value']
-				sold += 1
+					soldPrices.append(float(item['sellingStatus']['currentPrice']['value']))
+					if sold == 0:
+						latestSoldDate = item['listingInfo']['endTime']['value']
+					else:
+						earliestSoldDate = item['listingInfo']['endTime']['value']
+					sold += 1
 		currentPage += 1
 
 	meanPrice = round(numpy.mean(soldPrices), 2)
 	priceStdDev = round(numpy.std(soldPrices), 2)
 	greatDeal = round(meanPrice - priceStdDev, 2)
-	return render_template('statistics.html', earliestSoldDate=earliestSoldDate, latestSoldDate=latestSoldDate, categoryName=categoryName, searchTerm=searchTerm, sold=sold, unsold=unsold, meanPrice=meanPrice, priceStdDev=priceStdDev, greatDeal=greatDeal)
+	return render_template('statistics.html',
+		earliestSoldDate=earliestSoldDate,
+		latestSoldDate=latestSoldDate,
+		categoryName=categoryName,
+		searchTerm=searchTerm,
+		sold=sold,
+		unsold=unsold,
+		meanPrice=meanPrice,
+		priceStdDev=priceStdDev,
+		greatDeal=greatDeal,
+		foundConditions=foundConditions.keys())
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
