@@ -23,27 +23,19 @@ def index():
 def findCategory(searchTerm=None, categoryId=None):
 	if searchTerm is None:
 		searchTerm = request.form['searchTerm']
+	params = {
+		'itemFilter': [
+	        {'name': 'Condition', 'value': 'Used'},
+	        #{'name': 'SoldItemsOnly', 'value': True}
+	    ],
+		'sortOrder': 'EndTimeSoonest',
+		'keywords': searchTerm,
+		'outputSelector': 'CategoryHistogram'
+	}
 	if categoryId is not None:
-		api.execute('findCompletedItems', {
-			'itemFilter': [
-		        {'name': 'Condition', 'value': 'Used'},
-		        #{'name': 'SoldItemsOnly', 'value': True}
-		    ],
-			'sortOrder': 'EndTimeSoonest',
-			'keywords': searchTerm,
-			'outputSelector': 'CategoryHistogram',
-			'categoryId':categoryId
-		})
-	else:
-		api.execute('findCompletedItems', {
-			'itemFilter': [
-		        {'name': 'Condition', 'value': 'Used'},
-		        #{'name': 'SoldItemsOnly', 'value': True}
-		    ],
-			'sortOrder': 'EndTimeSoonest',
-			'keywords': searchTerm,
-			'outputSelector': 'CategoryHistogram'
-		})
+		params['categoryId'] = categoryId
+
+	api.execute('findCompletedItems', params)
 	response = api.response_dict()
 
 	if type(response['categoryHistogramContainer']['categoryHistogram']) is not list:
