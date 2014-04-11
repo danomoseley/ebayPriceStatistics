@@ -24,9 +24,26 @@ def findCategory(searchTerm=None, categoryId=None):
 	if searchTerm is None:
 		searchTerm = request.form['searchTerm']
 	if categoryId is not None:
-		api.execute('findCompletedItems', {'itemFilter(0).name':'Condition', 'itemFilter(0).value':'Used', 'sortOrder': 'EndTimeSoonest', 'keywords': searchTerm, 'outputSelector': 'CategoryHistogram', 'categoryId':categoryId})
+		api.execute('findCompletedItems', {
+			'itemFilter': [
+		        {'name': 'Condition', 'value': 'Used'},
+		        #{'name': 'SoldItemsOnly', 'value': True}
+		    ],
+			'sortOrder': 'EndTimeSoonest',
+			'keywords': searchTerm,
+			'outputSelector': 'CategoryHistogram',
+			'categoryId':categoryId
+		})
 	else:
-		api.execute('findCompletedItems', {'itemFilter(0).name':'Condition', 'itemFilter(0).value':'Used', 'sortOrder': 'EndTimeSoonest','keywords': searchTerm, 'outputSelector': 'CategoryHistogram'})
+		api.execute('findCompletedItems', {
+			'itemFilter': [
+		        {'name': 'Condition', 'value': 'Used'},
+		        #{'name': 'SoldItemsOnly', 'value': True}
+		    ],
+			'sortOrder': 'EndTimeSoonest',
+			'keywords': searchTerm,
+			'outputSelector': 'CategoryHistogram'
+		})
 	response = api.response_dict()
 
 	if type(response['categoryHistogramContainer']['categoryHistogram']) is not list:
@@ -36,20 +53,11 @@ def findCategory(searchTerm=None, categoryId=None):
 		if (type(category['childCategoryHistogram'])) is not list:
 			category['childCategoryHistogram'] = [category['childCategoryHistogram']]
 
-	#getCategories(response['categoryHistogramContainer'])
-	
 	return render_template('categories.html', searchTerm=searchTerm, categories=response['categoryHistogramContainer']['categoryHistogram'])
-	#for category in response['categoryHistogramContainer']['categoryHistogram']:
-	#	categoryId = category['categoryId']['value']
-	#	categoryName = category['categoryName']['value']
-	#	return "<a href='/statistics/%s/%s'>%s</a>" % (searchTerm, categoryId, categoryName)
-
 
 @app.route("/statistics/<searchTerm>/<categoryId>")
 def statistics(searchTerm=None, categoryId=None):
 	api2.execute('GetCategoryInfo', {'CategoryID': str(categoryId)})
-	
-	
 
 	categoryName = api2.response_dict()['CategoryArray']['Category']['CategoryName']['value']
 
