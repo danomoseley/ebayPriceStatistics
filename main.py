@@ -1,6 +1,7 @@
 from flask import Flask,render_template,request
 from ebaysdk import finding, shopping
 import numpy, pprint
+from datetime import datetime, timedelta
 import ConfigParser
 
 config = ConfigParser.RawConfigParser()
@@ -8,7 +9,7 @@ config.read('config.cfg')
 unwantedConditions = ['For parts or not working']
 
 app = Flask(__name__)
-#app.debug = True
+app.debug = True
 appid = config.get('Ebay','appid')
 api = finding(appid=appid)
 api2 = shopping(appid=appid)
@@ -100,6 +101,7 @@ def statistics(searchTerm=None, categoryId=None):
 	return render_template('statistics.html',
 		earliestSoldDate=earliestSoldDate,
 		latestSoldDate=latestSoldDate,
+		categoryId=categoryId,
 		categoryName=categoryName,
 		searchTerm=searchTerm,
 		sold=sold,
@@ -108,6 +110,44 @@ def statistics(searchTerm=None, categoryId=None):
 		priceStdDev=priceStdDev,
 		greatDeal=greatDeal,
 		foundConditions=foundConditions.keys())
+
+@app.route("/findPotentialBuys/<searchTerm>/<categoryId>/<price>")
+def findPotentialBuys(searchTerm, categoryId, price):
+	maxEndTime = datetime.utcnow() + timedelta(hours=1)
+
+	print maxEndTime.isoformat()
+
+	params = {
+		'itemFilter': [
+			{'name': 'EndTimeTo', 'value': maxEndTime.isoformat()},
+			{'name': 'MaxPrice', 'value': str(price)},
+		],
+		'sortOrder': 'EndTimeSoonest',
+		'keywords': searchTerm
+	}
+	if categoryId is not None:
+		params['categoryId'] = categoryId
+
+	api.execute('findItemsAdvanced', params)
+	response = api.response_dict()
+
+	if 'item' in response['searchResult']:
+		numResults = len(response['searchResult']['item'])
+
+		items = []
+		for item in response['searchResult']['item']:
+			itemCondition = item['condition']['conditionDisplayName']['value']
+			if itemCondition not in unwantedConditions:
+				items.append(item)
+
+		return render_template('findPotentialBuys.html',
+			items=items,
+			searchTerm=searchTerm,
+			categoryId=categoryId,
+			price=price,
+			numResults=numResults)
+	else:
+		return render_template('noResults.html'), 204
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
