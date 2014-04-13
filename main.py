@@ -113,7 +113,7 @@ def statistics(searchTerm=None, categoryId=None):
 
 @app.route("/findPotentialBuys/<searchTerm>/<categoryId>/<price>")
 def findPotentialBuys(searchTerm, categoryId, price):
-	maxEndTime = datetime.utcnow() + timedelta(hours=1)
+	maxEndTime = datetime.utcnow() + timedelta(minutes=15)
 
 	print maxEndTime.isoformat()
 
