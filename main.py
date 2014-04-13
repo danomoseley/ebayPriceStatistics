@@ -9,7 +9,7 @@ config.read('config.cfg')
 unwantedConditions = ['For parts or not working']
 
 app = Flask(__name__)
-app.debug = True
+#app.debug = True
 appid = config.get('Ebay','appid')
 api = finding(appid=appid)
 api2 = shopping(appid=appid)
