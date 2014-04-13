@@ -143,16 +143,32 @@ def findPotentialBuys(searchTerm, categoryId, price):
 		items = []
 
 		for item in response['searchResult']['item']:
+			itemId = item['itemId']['value']
+
 			itemCondition = item['condition']['conditionDisplayName']['value']
 			if itemCondition not in unwantedConditions:
-				items.append(item)
+				params = {
+					'ItemID':itemId,
+					'DestinationPostalCode': '11231'
+				}
+				api2.execute('GetShippingCosts', params)
+				shippingCostResponse = api2.response_dict()
 
-		return render_template('findPotentialBuys.html',
-			items=items,
-			searchTerm=searchTerm,
-			categoryId=categoryId,
-			price=price,
-			numResults=numResults)
+				shippingCost = shippingCostResponse['ShippingCostSummary']['ShippingServiceCost']['value']
+				currentPrice = item['sellingStatus']['currentPrice']['value']
+
+				if (float(currentPrice) + float(shippingCost)) < float(price):
+					items.append(item)
+
+		if not items:
+			return render_template('noResults.html'), 204
+		else:
+			return render_template('findPotentialBuys.html',
+				items=items,
+				searchTerm=searchTerm,
+				categoryId=categoryId,
+				price=price,
+				numResults=numResults)
 	else:
 		return render_template('noResults.html'), 204
 
