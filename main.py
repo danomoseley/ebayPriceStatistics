@@ -80,6 +80,9 @@ def statistics(searchTerm=None, categoryId=None):
 
 		foundConditions = {}
 
+		if type(response['searchResult']['item']) is not list:
+			response['searchResult']['item'] = [response['searchResult']['item']]
+
 		for item in response['searchResult']['item']:
 			itemCondition = item['condition']['conditionDisplayName']['value']
 			if itemCondition not in unwantedConditions:
