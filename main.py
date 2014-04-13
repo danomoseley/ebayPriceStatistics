@@ -134,7 +134,11 @@ def findPotentialBuys(searchTerm, categoryId, price):
 	if 'item' in response['searchResult']:
 		numResults = len(response['searchResult']['item'])
 
+		if type(response['searchResult']['item']) is not list:
+			response['searchResult']['item'] = [response['searchResult']['item']]
+
 		items = []
+
 		for item in response['searchResult']['item']:
 			itemCondition = item['condition']['conditionDisplayName']['value']
 			if itemCondition not in unwantedConditions:
