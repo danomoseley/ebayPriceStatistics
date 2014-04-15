@@ -100,7 +100,7 @@ def statistics(searchTerm=None, categoryId=None):
 
 	meanPrice = round(numpy.mean(soldPrices), 2)
 	priceStdDev = round(numpy.std(soldPrices), 2)
-	greatDeal = round(meanPrice - priceStdDev, 2)
+	greatDeal = round(meanPrice - (priceStdDev/2), 2)
 	return render_template('statistics.html',
 		earliestSoldDate=earliestSoldDate,
 		latestSoldDate=latestSoldDate,
