@@ -50,6 +50,23 @@ def findCategory(searchTerm=None, categoryId=None):
 
 @app.route("/statistics/<searchTerm>/<categoryId>")
 def statistics(searchTerm=None, categoryId=None):
+	stats = getStats(searchTerm, categoryId)
+
+	return render_template('statistics.html',
+		earliestSoldDate=stats['earliest_sold_date'],
+		latestSoldDate=stats['latest_sold_date'],
+		categoryId=categoryId,
+		categoryName=stats['category_name'],
+		searchTerm=searchTerm,
+		sold=stats['sold'],
+		unsold=stats['unsold'],
+		meanPrice=stats['mean_price'],
+		priceStdDev=stats['price_std_dev'],
+		greatDeal=stats['great_deal'],
+		goodDeal=stats['good_deal'],
+		foundConditions=stats['found_conditions'])
+
+def getStats(searchTerm=None, categoryId=None):
 	api2.execute('GetCategoryInfo', {'CategoryID': str(categoryId)})
 
 	categoryName = api2.response_dict()['CategoryArray']['Category']['CategoryName']['value']
@@ -100,30 +117,29 @@ def statistics(searchTerm=None, categoryId=None):
 
 	meanPrice = round(numpy.mean(soldPrices), 2)
 	priceStdDev = round(numpy.std(soldPrices), 2)
-	greatDeal = round(meanPrice - (priceStdDev/2), 2)
-	return render_template('statistics.html',
-		earliestSoldDate=earliestSoldDate,
-		latestSoldDate=latestSoldDate,
-		categoryId=categoryId,
-		categoryName=categoryName,
-		searchTerm=searchTerm,
-		sold=sold,
-		unsold=unsold,
-		meanPrice=meanPrice,
-		priceStdDev=priceStdDev,
-		greatDeal=greatDeal,
-		foundConditions=foundConditions.keys())
+	return {
+		'mean_price': meanPrice,
+		'price_std_dev': priceStdDev,
+		'good_deal': round(meanPrice - (priceStdDev/2), 2),
+		'great_deal': round(meanPrice - priceStdDev, 2),
+		'found_conditions': foundConditions.keys(),
+		'earliest_sold_date': earliestSoldDate,
+		'latest_sold_date': latestSoldDate,
+		'category_name': categoryName,
+		'sold': sold,
+		'unsold': unsold
+	}
 
-@app.route("/findPotentialBuys/<searchTerm>/<categoryId>/<price>")
-def findPotentialBuys(searchTerm, categoryId, price):
+@app.route("/findPotentialBuys/<searchTerm>/<categoryId>")
+def findPotentialBuys(searchTerm, categoryId):
 	maxEndTime = datetime.utcnow() + timedelta(minutes=15)
 
-	print maxEndTime.isoformat()
+	stats = getStats(searchTerm, categoryId)
 
 	params = {
 		'itemFilter': [
 			{'name': 'EndTimeTo', 'value': maxEndTime.isoformat()},
-			{'name': 'MaxPrice', 'value': str(price)},
+			{'name': 'MaxPrice', 'value': str(stats['good_deal'])},
 		],
 		'sortOrder': 'EndTimeSoonest',
 		'keywords': searchTerm
@@ -167,7 +183,8 @@ def findPotentialBuys(searchTerm, categoryId, price):
 				items=items,
 				searchTerm=searchTerm,
 				categoryId=categoryId,
-				price=price,
+				goodDeal=stats['good_deal'],
+				greatDeal=stats['great_deal'],
 				numResults=numResults)
 	else:
 		return render_template('noResults.html'), 204
