@@ -9,7 +9,7 @@ config.read('config.cfg')
 unwantedConditions = ['For parts or not working']
 
 app = Flask(__name__)
-#app.debug = True
+app.debug = True
 appid = config.get('Ebay','appid')
 api = finding(appid=appid)
 api2 = shopping(appid=appid)
@@ -132,8 +132,8 @@ def getStats(searchTerm=None, categoryId=None):
 
 @app.route("/findPotentialBuys/<searchTerm>/<categoryId>")
 def findPotentialBuys(searchTerm, categoryId):
-	maxEndTime = datetime.utcnow() + timedelta(minutes=15)
-
+	add_minutes = config.get('Ebay','potential_buys_minutes')
+	maxEndTime = datetime.utcnow() + timedelta(minutes=int(add_minutes))
 	stats = getStats(searchTerm, categoryId)
 
 	params = {
@@ -165,7 +165,7 @@ def findPotentialBuys(searchTerm, categoryId):
 			if itemCondition not in unwantedConditions:
 				params = {
 					'ItemID':itemId,
-					'DestinationPostalCode': '11231'
+					'DestinationPostalCode': config.get('Ebay','shipping_zip_code')
 				}
 				api2.execute('GetShippingCosts', params)
 				shippingCostResponse = api2.response_dict()
@@ -173,7 +173,7 @@ def findPotentialBuys(searchTerm, categoryId):
 				shippingCost = shippingCostResponse['ShippingCostSummary']['ShippingServiceCost']['value']
 				currentPrice = item['sellingStatus']['currentPrice']['value']
 
-				if (float(currentPrice) + float(shippingCost)) < float(price):
+				if float(currentPrice) < float(stats['good_deal']):
 					items.append(item)
 
 		if not items:
@@ -183,9 +183,9 @@ def findPotentialBuys(searchTerm, categoryId):
 				items=items,
 				searchTerm=searchTerm,
 				categoryId=categoryId,
-				goodDeal=stats['good_deal'],
-				greatDeal=stats['great_deal'],
-				numResults=numResults)
+                stats=stats,
+				numResults=numResults,
+                add_minutes=add_minutes)
 	else:
 		return render_template('noResults.html'), 204
 

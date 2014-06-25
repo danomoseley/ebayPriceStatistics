@@ -1,2 +1,4 @@
 [Ebay]
 appid=my-app-id
+shipping_zip_code=90210
+potential_buys_minutes=15
