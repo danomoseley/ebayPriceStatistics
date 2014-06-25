@@ -53,18 +53,9 @@ def statistics(searchTerm=None, categoryId=None):
 	stats = getStats(searchTerm, categoryId)
 
 	return render_template('statistics.html',
-		earliestSoldDate=stats['earliest_sold_date'],
-		latestSoldDate=stats['latest_sold_date'],
+		stats=stats,
 		categoryId=categoryId,
-		categoryName=stats['category_name'],
-		searchTerm=searchTerm,
-		sold=stats['sold'],
-		unsold=stats['unsold'],
-		meanPrice=stats['mean_price'],
-		priceStdDev=stats['price_std_dev'],
-		greatDeal=stats['great_deal'],
-		goodDeal=stats['good_deal'],
-		foundConditions=stats['found_conditions'])
+		searchTerm=searchTerm)
 
 def getStats(searchTerm=None, categoryId=None):
 	api2.execute('GetCategoryInfo', {'CategoryID': str(categoryId)})
@@ -117,11 +108,17 @@ def getStats(searchTerm=None, categoryId=None):
 
 	meanPrice = round(numpy.mean(soldPrices), 2)
 	priceStdDev = round(numpy.std(soldPrices), 2)
+	goodDeal = round(meanPrice - (priceStdDev/2), 2)
+
+	autoGoodDealMargin = config.get('Ebay','auto_good_deal_margin')
+	if autoGoodDealMargin is not None:
+		if goodDeal < (meanPrice - int(autoGoodDealMargin)):
+			goodDeal = meanPrice - int(autoGoodDealMargin)
+
 	return {
-		'mean_price': meanPrice,
-		'price_std_dev': priceStdDev,
-		'good_deal': round(meanPrice - (priceStdDev/2), 2),
-		'great_deal': round(meanPrice - priceStdDev, 2),
+		'mean_price': round(meanPrice, 2),
+		'price_std_dev': round(priceStdDev, 2),
+		'good_deal': round(goodDeal, 2),
 		'found_conditions': foundConditions.keys(),
 		'earliest_sold_date': earliestSoldDate,
 		'latest_sold_date': latestSoldDate,
