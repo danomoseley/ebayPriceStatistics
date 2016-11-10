@@ -111,12 +111,15 @@ def getStats(searchTerm=None, categoryId=None):
 
 	meanPrice = round(numpy.mean(soldPrices), 2)
 	priceStdDev = round(numpy.std(soldPrices), 2)
-	goodDeal = round(meanPrice - (priceStdDev/2), 2)
+	goodDeal = round(meanPrice - priceStdDev, 2)
 
 	autoGoodDealMargin = config.get('Ebay','auto_good_deal_margin')
 	if autoGoodDealMargin is not None:
 		if goodDeal < (meanPrice - int(autoGoodDealMargin)):
 			goodDeal = meanPrice - int(autoGoodDealMargin)
+
+	if goodDeal <= 0:
+		goodDeal = meanPrice/2
 
 	return {
 		'mean_price': round(meanPrice, 2),
