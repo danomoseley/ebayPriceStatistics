@@ -3,9 +3,12 @@ from ebaysdk import finding, shopping
 import numpy, pprint
 from datetime import datetime, timedelta
 import ConfigParser
+import os
+
+DIR = os.path.dirname(os.path.realpath(__file__))
 
 config = ConfigParser.RawConfigParser()
-config.read('config.cfg')
+config.read(os.path.join(DIR,'config.cfg'))
 unwantedConditions = ['For parts or not working']
 
 app = Flask(__name__)
