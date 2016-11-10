@@ -176,7 +176,7 @@ def findPotentialBuys(searchTerm, categoryId):
 				shippingCost = shippingCostResponse['ShippingCostSummary']['ShippingServiceCost']['value']
 				currentPrice = item['sellingStatus']['currentPrice']['value']
 
-				if float(currentPrice) < float(stats['good_deal']):
+				if (float(currentPrice) + float(shippingCost)) < float(stats['good_deal']):
 					items.append(item)
 
 		if not items:
