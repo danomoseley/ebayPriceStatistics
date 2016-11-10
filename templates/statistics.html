@@ -4,14 +4,26 @@
 {{searchTerm}}<br>
 {{categoryName}}<br>
 <br>
-Sold Listings: {{stats['sold']}}<br>
-Unsold Listings: {{stats['unsold']}}<br>
-Earliest Sold Date: {{stats['earliest_sold_date']}}<br>
-Latest Sold Date: {{stats['latest_sold_date']}}<br>
-<br>
-Average Price: ${{stats['mean_price']}}<br>
-Standard Deviation: ${{stats['price_std_dev']}}<br>
-<b>Good Deal: ${{stats['good_deal']}}</b><br>
+<table>
+   <tr><td>Sold Listings</td><td>{{stats['sold']}}</td></tr>
+   <tr><td>Unsold Listings</td><td>{{stats['unsold']}}</td></tr>
+   <tr><td>Earliest Sold Date</td><td>{{stats['earliest_sold_date']}}</td></tr>
+   <tr><td>Average Price</td><td>${{stats['mean_price']}}</td></tr>
+   <tr><td>Standard Deviation</td><td>${{stats['price_std_dev']}}</td></tr>
+   <tr><td>Good Deal</td><td>${{stats['good_deal']}}</td></tr>
+</table>
+<table>
+   <tr>
+      <td>{{stats['sold']}}</td>
+      <td>{{stats['unsold']}}</td>
+      <td>{{stats['earliest_sold_date']}}</td>
+      <td>${{stats['mean_price']}}</td>
+      <td>${{stats['price_std_dev']}}</td>
+      <td>${{stats['good_deal']}}</td>
+   </tr>
+</table>
+
+
 
 <br>
 <br>
