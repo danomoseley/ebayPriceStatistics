@@ -1,21 +1,22 @@
 from flask import Flask,render_template,request
-from ebaysdk import finding, shopping
+from ebaysdk.shopping import Connection as shopping
+from ebaysdk.finding import Connection as finding
 import numpy, pprint
 from datetime import datetime, timedelta
-import ConfigParser
+import configparser
 import os
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 
-config = ConfigParser.RawConfigParser()
+config = configparser.RawConfigParser()
 config.read(os.path.join(DIR,'config.cfg'))
 unwantedConditions = ['For parts or not working']
 
 app = Flask(__name__)
 app.debug = True
 appid = config.get('Ebay','appid')
-api = finding(appid=appid)
-api2 = shopping(appid=appid)
+api = finding(appid=appid, config_file=None)
+api2 = shopping(appid=appid, config_file=None)
 
 @app.route('/')
 def index():
@@ -40,7 +41,7 @@ def findCategory(searchTerm=None, categoryId=None):
 		params['categoryId'] = categoryId
 
 	api.execute('findCompletedItems', params)
-	response = api.response_dict()
+	response = api.response.dict()
 
 	if type(response['categoryHistogramContainer']['categoryHistogram']) is not list:
 		response['categoryHistogramContainer']['categoryHistogram'] = [response['categoryHistogramContainer']['categoryHistogram']]
@@ -62,8 +63,8 @@ def statistics(searchTerm=None, categoryId=None):
 
 def getStats(searchTerm=None, categoryId=None):
 	api2.execute('GetCategoryInfo', {'CategoryID': str(categoryId)})
-
-	categoryName = api2.response_dict()['CategoryArray']['Category']['CategoryName']['value']
+	response = api2.response.dict()
+	categoryName = response['CategoryArray']['Category']['CategoryName']
 
 	sold = 0
 	unsold = 0
@@ -85,9 +86,9 @@ def getStats(searchTerm=None, categoryId=None):
 			'keywords': searchTerm,
 			'categoryId': str(categoryId),
 		})
-		response = api.response_dict()
+		response = api.response.dict()
 
-		totalPages = int(response['paginationOutput']['totalPages']['value'])
+		totalPages = int(response['paginationOutput']['totalPages'])
 
 		foundConditions = {}
 
@@ -95,17 +96,18 @@ def getStats(searchTerm=None, categoryId=None):
 			response['searchResult']['item'] = [response['searchResult']['item']]
 
 		for item in response['searchResult']['item']:
-			itemCondition = item['condition']['conditionDisplayName']['value']
+			itemCondition = item['condition']['conditionDisplayName']
 			if itemCondition not in unwantedConditions:
 				foundConditions[itemCondition] = True
-				if item['sellingStatus']['sellingState']['value'] == 'EndedWithoutSales':
+				if item['sellingStatus']['sellingState'] == 'EndedWithoutSales':
 					unsold += 1
 				else:
+					
 					soldPrices.append(float(item['sellingStatus']['currentPrice']['value']))
 					if sold == 0:
-						latestSoldDate = item['listingInfo']['endTime']['value']
+						latestSoldDate = item['listingInfo']['endTime']
 					else:
-						earliestSoldDate = item['listingInfo']['endTime']['value']
+						earliestSoldDate = item['listingInfo']['endTime']
 					sold += 1
 		currentPage += 1
 
@@ -151,7 +153,7 @@ def findPotentialBuys(searchTerm, categoryId):
 		params['categoryId'] = categoryId
 
 	api.execute('findItemsAdvanced', params)
-	response = api.response_dict()
+	response = api.response.dict()
 
 	if 'item' in response['searchResult']:
 		numResults = len(response['searchResult']['item'])
@@ -162,19 +164,19 @@ def findPotentialBuys(searchTerm, categoryId):
 		items = []
 
 		for item in response['searchResult']['item']:
-			itemId = item['itemId']['value']
+			itemId = item['itemId']
 
-			itemCondition = item['condition']['conditionDisplayName']['value']
+			itemCondition = item['condition']['conditionDisplayName']
 			if itemCondition not in unwantedConditions:
 				params = {
 					'ItemID':itemId,
 					'DestinationPostalCode': config.get('Ebay','shipping_zip_code')
 				}
 				api2.execute('GetShippingCosts', params)
-				shippingCostResponse = api2.response_dict()
+				shippingCostResponse = api2.response.dict()
 
-				shippingCost = shippingCostResponse['ShippingCostSummary']['ShippingServiceCost']['value']
-				currentPrice = item['sellingStatus']['currentPrice']['value']
+				shippingCost = shippingCostResponse['ShippingCostSummary']['ShippingServiceCost']
+				currentPrice = item['sellingStatus']['currentPrice']
 
 				if (float(currentPrice) + float(shippingCost)) < float(stats['good_deal']):
 					items.append(item)

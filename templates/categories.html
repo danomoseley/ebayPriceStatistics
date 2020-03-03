@@ -3,12 +3,12 @@
 {% include 'search_header.html' %}
 {% for category in categories %}
 
-  	<a href="/statistics/{{searchTerm}}/{{category['categoryId']['value']}}">{{ category['categoryName']['value'] }}</a>
-  	&nbsp;-&nbsp;<a href="/findCategory/{{searchTerm}}/{{category['categoryId']['value']}}">Refine</a>
+  	<a href="/statistics/{{searchTerm}}/{{category['categoryId']}}">{{ category['categoryName'] }}</a>
+  	&nbsp;-&nbsp;<a href="/findCategory/{{searchTerm}}/{{category['categoryId']}}">Refine</a>
   	<br>
   	{% for childCategory in category['childCategoryHistogram'] %}
-  		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="/statistics/{{searchTerm}}/{{childCategory['categoryId']['value']}}">{{ childCategory['categoryName']['value'] }}</a>
-		&nbsp;-&nbsp;<a href="/findCategory/{{searchTerm}}/{{childCategory['categoryId']['value']}}">Refine</a>
+  		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="/statistics/{{searchTerm}}/{{childCategory['categoryId']}}">{{ childCategory['categoryName'] }}</a>
+		&nbsp;-&nbsp;<a href="/findCategory/{{searchTerm}}/{{childCategory['categoryId']}}">Refine</a>
   		<br>
   	{% endfor %}
 {% endfor %}
